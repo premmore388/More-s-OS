@@ -1,0 +1,13 @@
+{
+  "name": "more",
+  "version": "0.0.0",
+  "description": "",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js boot.bin"
+  },
+  "keywords": ["javascript", "operating system", "more", "osdev"],
+  "author": "@prem-more",
+  "license": "UNLICENSED"
+}

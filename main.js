@@ -1,0 +1,78 @@
+import { writeFile } from 'node:fs/promises';
+
+let ctors;
+let rev;
+let combine;
+let save2file;
+let message;
+
+message = 'Hello from More !';
+
+save2file = async (msg, filename) => {
+    const buf = mkos(msg);
+    await writeFile(filename, buf, { encoding: 'binary' });
+    return true;
+};
+
+combine = (a, b) =>
+    ((a & 0xff) << 8)
+    | (b & 0xff);
+
+rev = val => {
+    const a = val & 0xff;
+    const b = (val & 0xff00) >> 8;
+    return String.fromCharCode(a) + String.fromCharCode(b);
+};
+
+ctors = {
+    copy2ax: val => "\xb8" + rev(val),
+    copy2bx: val => "\xbb" + rev(val),
+    copy2cx: val => "\xb9" + rev(val),
+    copy2sp: () => "\x89\xc4",
+    biosinterrupt: () => "\xcd\x10",
+    interruptoff: () => "\xfa",
+    halt: () => "\x90\xf4",
+    jmp: () => "\xeb\xfc",
+    padding: amt => "\x90".repeat(amt),
+    magic: () => rev(0xaa55),
+    print: str => str
+        .concat('\r\n')
+        .split('')
+        .map(x => ctors.copy2ax(combine(0x0e, x.charCodeAt(0)))
+            .concat(ctors.biosinterrupt()))
+        .join('')
+};
+
+let mkos;
+let part1;
+let part2;
+let exitval;
+let file;
+
+mkos = msg =>
+    part1(msg)
+    + part2(510 - part1(msg).length);
+
+part1 = msg =>
+    ctors.copy2ax(0xfbff)
+    + ctors.copy2sp()
+    + ctors.copy2bx(0x0000)
+    + ctors.print(msg)
+    + ctors.halt()
+    + ctors.jmp();
+
+part2 = amt =>
+    ctors.padding(amt)
+    + ctors.magic();
+
+file = process.argv[2];
+if (!file) {
+    console.error('Usage: ' + process.argv[1], '<filename>');
+    process.exit(1);
+}
+
+exitval = await save2file(message, file);
+if (exitval)
+    console.log('ok');
+else
+    console.error('failed');
